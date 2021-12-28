@@ -12,7 +12,7 @@ register_toolchains("@rules_py_simple//:py_toolchain")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-# Fun http_archive hack to register zstd as a Bazel rule (so build targets can depend on it).
+# Fun http_archive hack to register zstd as a Bazel repo (so build targets can depend on it).
 http_archive(
     name = "com_github_facebook_zstd",
     urls = [
@@ -26,7 +26,7 @@ http_archive(
         "make",
     ],
     # zstd is the name of binary produced from running "make"
-    # therefore we export it so the pre-compiled binary can be dependency for a build target.
+    # therefore we export it so the pre-compiled binary can be depended on as a Label.
     build_file_content = """
 exports_files(["zstd"])
 
