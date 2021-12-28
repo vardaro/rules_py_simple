@@ -39,7 +39,8 @@ def _py_build_hermetic_interpreter(rctx):
         sha256 = integrity_shasum,
         output = "python.tar.zst",
     )
-
+    
+    # Running "zstd -d python.tar.zst" to unpack the archive.
     zstd_bin_path = rctx.path(rctx.attr._zstd_bin)
     rctx.report_progress("decompressing python... ")
     res = rctx.execute([
@@ -50,13 +51,17 @@ def _py_build_hermetic_interpreter(rctx):
 
     if res.return_code:
         fail("Error decompressing with zstd: " + res.stdout + res.stderr)
-
+    
+    # Now we can extract it normally.
     rctx.extract(archive = "python.tar")
     rctx.delete("python.tar")
     rctx.delete("python.tar.zst")
-
+    
+    # Our Python distribution generates a PYTHON.json file that contains useful fun facts about our build.
+    # We can use this to extract the path to our python executable.
     python_build_data = json.decode(rctx.read("python/PYTHON.json"))
 
+    # Generate build targets for Python. This gets dropped in the WORKSPACE level BUILD.bazel for our new repo.
     BUILD_FILE_CONTENT = """
 filegroup(
     name = "files",
