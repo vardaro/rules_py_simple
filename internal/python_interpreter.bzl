@@ -9,9 +9,13 @@ def _py_build_hermetic_interpreter(rctx):
     """
     Downloads and builds a Python distribution.
 
-    Because the Python we're building ships in the .zst format, we need to download and build zstd from source.
-    Otherwise, there's a dependency on the host machine (which may not have zstd installed).
+    The Python distribution we've selected ships as a .zst, so we need zstandard to decompress the archive.
+    This is annoying because rctx.download_and_extract() doesn't natively support zstd.
+    This means we need to download the Python archive and manually decompress it using a prebuilt zstd binary.
 
+    Although we could rely on the system installation of zstd (whatever "> which zstd") points to, doing so is undesireable as it introduces flakiness in the build and unnecessary dependency on the host.
+    It's preferable that we download a prebuilt zstd artifact and use so, so everyone's on the same page.
+    
     No windows support (sorry)
 
     Args:
@@ -82,7 +86,7 @@ py_build_hermetic_interpreter = repository_rule(
     attrs = {
         "_zstd_bin": attr.label(
             default = "@com_github_facebook_zstd//:zstd",
-            doc = "Label denoting an executable file target to a pre-built zstd binary.",
+            doc = "Label type denoting an executable file target to a pre-built zstd binary.",
         ),
     },
 )
