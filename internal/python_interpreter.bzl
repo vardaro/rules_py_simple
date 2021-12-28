@@ -11,10 +11,10 @@ def _py_build_hermetic_interpreter(rctx):
 
     The Python distribution we've selected ships as a .zst, so we need zstandard to decompress the archive.
     This is annoying because rctx.download_and_extract() doesn't natively support zstd.
-    This means we need to download the Python archive and manually decompress it using a prebuilt zstd binary.
+    We need to download the Python archive and manually decompress it using a prebuilt zstd binary.
 
-    Although we could rely on the system installation of zstd (whatever "> which zstd") points to, doing so is undesireable as it introduces flakiness in the build and unnecessary dependency on the host.
-    It's preferable that we download a prebuilt zstd artifact and use so, so everyone's on the same page.
+    Although we could rely on the system installation of zstd (whatever the command "which zstd") points to, doing so is undesireable as it introduces flakiness in our build and adds an unnecessary dependency on the host.
+    It's preferable that we download a prebuilt zstd artifact so everyone's on the same page.
     
     No windows support (sorry)
 
