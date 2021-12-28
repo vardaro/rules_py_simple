@@ -17,10 +17,7 @@ def _py_build_hermetic_interpreter(rctx):
     Args:
         rtcx: Repository context.
     """
-
-    # Downlaod python
     os_name = rctx.os.name.lower()
-
     if os_name == OSX_OS_NAME:
         url = "https://github.com/indygreg/python-build-standalone/releases/download/20210228/cpython-3.8.8-x86_64-apple-darwin-pgo+lto-20210228T1503.tar.zst"
         integrity_shasum = "4c859311dfd677e4a67a2c590ff39040e76b97b8be43ef236e3c924bff4c67d2"
@@ -39,25 +36,7 @@ def _py_build_hermetic_interpreter(rctx):
         output = "python.tar.zst",
     )
 
-    # Download zstd, build it, and collect the path to the zstd binary.
-    rctx.download_and_extract(
-        url = ["https://github.com/facebook/zstd/releases/download/v1.5.1/zstd-1.5.1.tar.gz"],
-        sha256 = "e28b2f2ed5710ea0d3a1ecac3f6a947a016b972b9dd30242369010e5f53d7002",
-    )
-
-    rctx.report_progress("building zstd...")
-    res = rctx.execute(
-        [
-            "make",
-        ],
-        working_directory = "zstd-1.5.1",
-    )
-
-    if res.return_code:
-        fail("Error building zstd from source: " + res.stdout + res.stderr)
-
-    zstd_bin_path = "zstd-1.5.1/zstd"
-
+    zstd_bin_path = rctx.path(rctx.attr._zstd_bin)
     rctx.report_progress("decompressing python... ")
     res = rctx.execute([
         zstd_bin_path,
@@ -71,7 +50,6 @@ def _py_build_hermetic_interpreter(rctx):
     rctx.extract(archive = "python.tar")
     rctx.delete("python.tar")
     rctx.delete("python.tar.zst")
-    rctx.delete("zstd-1.5.1")
 
     python_build_data = json.decode(rctx.read("python/PYTHON.json"))
 
@@ -87,6 +65,12 @@ filegroup(
     srcs = ["python/{interpreter_path}"],
     visibility = ["//visibility:public"],
 )
+
+sh_binary(
+    name = "python_bin",
+    srcs = ["python/{interpreter_path}"],
+    visibility = ["//visibility:public"],
+)
 """.format(interpreter_path = python_build_data["python_exe"])
 
     rctx.file("BUILD.bazel", BUILD_FILE_CONTENT)
@@ -95,5 +79,10 @@ filegroup(
 
 py_build_hermetic_interpreter = repository_rule(
     implementation = _py_build_hermetic_interpreter,
-    attrs = {},
+    attrs = {
+        "_zstd_bin": attr.label(
+            default = "@com_github_facebook_zstd//:zstd",
+            doc = "Label denoting an executable file target to a pre-built zstd binary.",
+        ),
+    },
 )
