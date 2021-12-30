@@ -5,7 +5,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 OSX_OS_NAME = "mac os x"
 LINUX_OS_NAME = "linux"
 
-def _py_build_hermetic_interpreter(rctx):
+def _py_download(rctx):
     """
     Downloads and builds a Python distribution.
 
@@ -23,8 +23,8 @@ def _py_build_hermetic_interpreter(rctx):
     """
     os_name = rctx.os.name.lower()
     if os_name == OSX_OS_NAME:
-        url = "https://github.com/indygreg/python-build-standalone/releases/download/20210228/cpython-3.8.8-x86_64-apple-darwin-pgo+lto-20210228T1503.tar.zst"
-        integrity_shasum = "4c859311dfd677e4a67a2c590ff39040e76b97b8be43ef236e3c924bff4c67d2"
+        url = "https://github.com/indygreg/python-build-standalone/releases/download/20211017/cpython-3.10.0-x86_64-apple-darwin-install_only-20211017T1616.tar.gz"
+        integrity_shasum = "fc0d184feb6db61f410871d0660d2d560e0397c36d08b086dfe115264d1963f4"
 
     elif os_name == LINUX_OS_NAME:
         url = "https://github.com/indygreg/python-build-standalone/releases/download/20210228/cpython-3.8.8-x86_64-unknown-linux-gnu-pgo+lto-20210228T1503.tar.zst"
@@ -34,32 +34,14 @@ def _py_build_hermetic_interpreter(rctx):
         fail("OS '{}' is not supported.".format(os_name))
 
     rctx.report_progress("downloading python...")
-    rctx.download(
+    rctx.download_and_extract(
         url = [url],
         sha256 = integrity_shasum,
-        output = "python.tar.zst",
     )
-    
-    # Running "zstd -d python.tar.zst" to unpack the archive.
-    zstd_bin_path = rctx.path(rctx.attr._zstd_bin)
-    rctx.report_progress("decompressing python... ")
-    res = rctx.execute([
-        zstd_bin_path,
-        "-d",
-        "python.tar.zst",
-    ])
-
-    if res.return_code:
-        fail("Error decompressing with zstd: " + res.stdout + res.stderr)
-    
-    # Now we can extract it normally.
-    rctx.extract(archive = "python.tar")
-    rctx.delete("python.tar")
-    rctx.delete("python.tar.zst")
     
     # Our Python distribution generates a PYTHON.json file that contains useful fun facts about our build.
     # We can use this to extract the path to our python executable.
-    python_build_data = json.decode(rctx.read("python/PYTHON.json"))
+    # python_build_data = json.decode(rctx.read("python/PYTHON.json"))
 
     # Generate build targets for Python. This gets dropped in the WORKSPACE level BUILD.bazel for our new repo.
     BUILD_FILE_CONTENT = """
@@ -76,18 +58,17 @@ filegroup(
 )
 
 sh_binary(
-    name = "python_bin",
+    name = "python_interpreter",
     srcs = ["python/{interpreter_path}"],
     visibility = ["//visibility:public"],
 )
-""".format(interpreter_path = python_build_data["python_exe"])
-
+""".format(interpreter_path = "bin/python3.10")
     rctx.file("BUILD.bazel", BUILD_FILE_CONTENT)
 
     return None
 
-py_build_hermetic_interpreter = repository_rule(
-    implementation = _py_build_hermetic_interpreter,
+py_download = repository_rule(
+    implementation = _py_download,
     attrs = {
         "_zstd_bin": attr.label(
             default = "@com_github_facebook_zstd//:zstd",
