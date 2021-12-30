@@ -36,4 +36,8 @@ py_runtime(
     visibility = ["//visibility:public"],
 )
 
+register_toolchains(
+    "@py_darwin_x86_64//:toolchain",
+    "@py_linux_x86_64//:toolchain",
+)
 
