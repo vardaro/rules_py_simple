@@ -1,11 +1,6 @@
 """Repository rules for rules_py_simple"""
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-OSX_OS_NAME = "mac os x"
-LINUX_OS_NAME = "linux"
-
-def _py_download(rctx):
+def _py_download(ctx):
     """
     Downloads and builds a Python distribution.
 
@@ -19,24 +14,12 @@ def _py_download(rctx):
     No windows support (sorry)
 
     Args:
-        rtcx: Repository context.
+        ctx: Repository context.
     """
-    os_name = rctx.os.name.lower()
-    if os_name == OSX_OS_NAME:
-        url = "https://github.com/indygreg/python-build-standalone/releases/download/20211017/cpython-3.10.0-x86_64-apple-darwin-install_only-20211017T1616.tar.gz"
-        integrity_shasum = "fc0d184feb6db61f410871d0660d2d560e0397c36d08b086dfe115264d1963f4"
-
-    elif os_name == LINUX_OS_NAME:
-        url = "https://github.com/indygreg/python-build-standalone/releases/download/20210228/cpython-3.8.8-x86_64-unknown-linux-gnu-pgo+lto-20210228T1503.tar.zst"
-        integrity_shasum = "74c9067b363758e501434a02af87047de46085148e673547214526da6e2b2155"
-
-    else:
-        fail("OS '{}' is not supported.".format(os_name))
-
     rctx.report_progress("downloading python...")
     rctx.download_and_extract(
-        url = [url],
-        sha256 = integrity_shasum,
+        url = ctx.attr.urls,
+        sha256 = ctx.attr.sha256,
     )
     
     # Our Python distribution generates a PYTHON.json file that contains useful fun facts about our build.
@@ -70,9 +53,27 @@ sh_binary(
 py_download = repository_rule(
     implementation = _py_download,
     attrs = {
-        "_zstd_bin": attr.label(
-            default = "@com_github_facebook_zstd//:zstd",
-            doc = "Label type denoting an executable file target to a pre-built zstd binary.",
+        "urls": attr.string_list(
+            mandatory = True,
+            doc = "String list of mirror URLs where the Python distribution can be downloaded.",
         ),
+        "sha256": attr.string(
+            mandatory = True,
+            doc = "Exepcted SHA-256 sum of the archive.",
+        ),
+        "os": attr.string(
+            mandatory = True,
+            values = ["darwin", "linux", "windows"],
+            doc = "Host operating system.",
+        ),
+        "arch": attr.string(
+            mandatory = True,
+            values = ["amd64", "x64_64"],
+            doc = "Host architecture.",
+        ),
+        "_build_tpl": attr.label(
+            default = "@rules_py_simple//internal:BUILD.dist.bazel.tpl",
+            doc = "Label denoting the BUILD file template that get's installed in the repo."
+        )
     },
 )
