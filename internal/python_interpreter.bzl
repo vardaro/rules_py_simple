@@ -71,6 +71,10 @@ py_download = repository_rule(
             values = ["amd64", "x64_64"],
             doc = "Host architecture.",
         ),
+        "bin_path": attr.string(
+            default = "python/bin/python3",
+            doc = "Path you'd expect the python interpreter binary to live."
+        )
         "_build_tpl": attr.label(
             default = "@rules_py_simple//internal:BUILD.dist.bazel.tpl",
             doc = "Label denoting the BUILD file template that get's installed in the repo."

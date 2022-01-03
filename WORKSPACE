@@ -20,22 +20,6 @@ py_download(
     urls = ["https://github.com/indygreg/python-build-standalone/releases/download/20211017/cpython-3.10.0-x86_64-unknown-linux-gnu-install_only-20211017T1616.tar.gz"],
 )
 
-py_runtime(
-    name = "py_darwin_x86_64_runtime",
-    files = ["@py_darwin_x86_64//:files"],
-    interpreter = "@py_darwin_x86_64//:interpreter",
-    python_version = "PY3",
-    visibility = ["//visibility:public"],
-)
-
-py_runtime(
-    name = "py_linux_x86_64_runtime",
-    files = ["@py_linux_x86_64//:files"],
-    interpreter = "@py_linux_x86_64//:interpreter",
-    python_version = "PY3",
-    visibility = ["//visibility:public"],
-)
-
 register_toolchains(
     "@py_darwin_x86_64//:toolchain",
     "@py_linux_x86_64//:toolchain",
