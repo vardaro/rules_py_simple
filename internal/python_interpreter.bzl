@@ -5,7 +5,7 @@ def _py_download(ctx):
     Downloads and builds a Python distribution.
 
     The Python distribution we've selected ships as a .zst, so we need zstandard to decompress the archive.
-    This is annoying because rctx.download_and_extract() doesn't natively support zstd.
+    This is annoying because ctx.download_and_extract() doesn't natively support zstd.
     We need to download the Python archive and manually decompress it using a prebuilt zstd binary.
 
     Although we could rely on the system installation of zstd (whatever the command "which zstd" points to), doing so is undesireable as it introduces flakiness in our build and adds an unnecessary dependency on the host.
@@ -13,11 +13,11 @@ def _py_download(ctx):
     Args:
         ctx: Repository context.
     """
-    rctx.report_progress("downloading python")
-    rctx.download_and_extract(
+    ctx.report_progress("downloading python")
+    ctx.download_and_extract(
         url = ctx.attr.urls,
         sha256 = ctx.attr.sha256,
-        strip_prefix = "python",
+        stripPrefix = "python",
     )
     
     ctx.report_progress("generating build file") 
@@ -45,8 +45,7 @@ def _py_download(ctx):
     constraints = [os_constraint, arch_constraint]
     
     # So Starlark doesn't throw an indentation error when this gets injected.
-    constraints_str = ",\n        ".join('"%s"' % c for c in constraints)
-    print(constraints_str)
+    constraints_str = ",\n        ".join(['"%s"' % c for c in constraints])
 
     substitutions = {
         "{constraints}": constraints_str,
@@ -79,16 +78,16 @@ py_download = repository_rule(
         ),
         "arch": attr.string(
             mandatory = True,
-            values = ["amd64", "x64_64"],
+            values = ["x86_64"],
             doc = "Host architecture.",
         ),
         "_interpreter_path": attr.string(
             default = "bin/python3",
-            doc = "Path you'd expect the python interpreter binary to live."
-        )
+            doc = "Path you'd expect the python interpreter binary to live.",
+        ),
         "_build_tpl": attr.label(
             default = "@rules_py_simple//internal:BUILD.dist.bazel.tpl",
-            doc = "Label denoting the BUILD file template that get's installed in the repo."
+            doc = "Label denoting the BUILD file template that get's installed in the repo.",
         )
     },
 )
