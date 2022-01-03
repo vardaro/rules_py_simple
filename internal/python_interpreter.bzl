@@ -9,44 +9,55 @@ def _py_download(ctx):
     We need to download the Python archive and manually decompress it using a prebuilt zstd binary.
 
     Although we could rely on the system installation of zstd (whatever the command "which zstd" points to), doing so is undesireable as it introduces flakiness in our build and adds an unnecessary dependency on the host.
-    It's preferable that we download a prebuilt zstd artifact so everyone's on the same page.
-    
-    No windows support (sorry)
 
     Args:
         ctx: Repository context.
     """
-    rctx.report_progress("downloading python...")
+    rctx.report_progress("downloading python")
     rctx.download_and_extract(
         url = ctx.attr.urls,
         sha256 = ctx.attr.sha256,
+        strip_prefix = "python",
     )
     
-    # Our Python distribution generates a PYTHON.json file that contains useful fun facts about our build.
-    # We can use this to extract the path to our python executable.
-    # python_build_data = json.decode(rctx.read("python/PYTHON.json"))
+    ctx.report_progress("generating build file") 
+    os_constraint = ""
+    arch_constraint = ""
 
-    # Generate build targets for Python. This gets dropped in the WORKSPACE level BUILD.bazel for our new repo.
-    BUILD_FILE_CONTENT = """
-filegroup(
-    name = "files",
-    srcs = glob(["install/**"], exclude = ["**/* *"]),
-    visibility = ["//visibility:public"],
-)
+    if ctx.attr.os == "darwin":
+        os_constraint = "@platforms//os:osx"
 
-filegroup(
-    name = "interpreter",
-    srcs = ["python/{interpreter_path}"],
-    visibility = ["//visibility:public"],
-)
+    elif ctx.attr.os == "linux":
+        os_constraint = "@platforms//os:linux"
 
-sh_binary(
-    name = "python_interpreter",
-    srcs = ["python/{interpreter_path}"],
-    visibility = ["//visibility:public"],
-)
-""".format(interpreter_path = "bin/python3.10")
-    rctx.file("BUILD.bazel", BUILD_FILE_CONTENT)
+    elif ctx.attr.os == "windows":
+        os_constraint = "@platforms//os:windows"
+
+    else:
+        fail("{} not supported".format(ctx.attr.os))
+
+    if ctx.attr.arch == "x86_64":
+        arch_constraint = "@platforms//cpu:x86_64"
+
+    else:
+        fail("{} not supported".format(ctx.attr.arch))
+
+    constraints = [os_constraint, arch_constraint]
+    
+    # So Starlark doesn't throw an indentation error when this gets injected.
+    constraints_str = ",\n        ".join('"%s"' % c for c in constraints)
+    print(constraints_str)
+
+    substitutions = {
+        "{constraints}": constraints_str,
+        "{interpreter_path}": ctx.attr._interpreter_path,
+    }
+
+    ctx.template(
+        "BUILD.bazel",
+        ctx.attr._build_tpl,
+        substitutions = substitutions,
+    )
 
     return None
 
@@ -59,7 +70,7 @@ py_download = repository_rule(
         ),
         "sha256": attr.string(
             mandatory = True,
-            doc = "Exepcted SHA-256 sum of the archive.",
+            doc = "Expected SHA-256 sum of the archive.",
         ),
         "os": attr.string(
             mandatory = True,
@@ -71,8 +82,8 @@ py_download = repository_rule(
             values = ["amd64", "x64_64"],
             doc = "Host architecture.",
         ),
-        "bin_path": attr.string(
-            default = "python/bin/python3",
+        "_interpreter_path": attr.string(
+            default = "bin/python3",
             doc = "Path you'd expect the python interpreter binary to live."
         )
         "_build_tpl": attr.label(

@@ -6,7 +6,7 @@ filegroup(
 
 filegroup(
     name = "interpreter",
-    srcs = ["python/{interpreter_path}"],
+    srcs = ["{interpreter_path}"],
     visibility = ["//visibility:public"],
 )
 
@@ -21,10 +21,10 @@ py_runtime(
 toolchain(
     name = "toolchain",
     exec_compatible_with = [
-	{exec_constraints},
+	{constraints},
     ],
     target_compatible_with = [
-	{target_constraints},
+	{constraints},
     ],
     toolchain = ":py_runtime",
     toolchain_type = "@rules_py_simple//:python_toolchain_type",
