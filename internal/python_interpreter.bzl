@@ -1,97 +1,93 @@
 """Repository rules for rules_py_simple"""
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-OSX_OS_NAME = "mac os x"
-LINUX_OS_NAME = "linux"
-
-def _py_build_hermetic_interpreter(rctx):
+def _py_download(ctx):
     """
     Downloads and builds a Python distribution.
 
     The Python distribution we've selected ships as a .zst, so we need zstandard to decompress the archive.
-    This is annoying because rctx.download_and_extract() doesn't natively support zstd.
+    This is annoying because ctx.download_and_extract() doesn't natively support zstd.
     We need to download the Python archive and manually decompress it using a prebuilt zstd binary.
 
     Although we could rely on the system installation of zstd (whatever the command "which zstd" points to), doing so is undesireable as it introduces flakiness in our build and adds an unnecessary dependency on the host.
-    It's preferable that we download a prebuilt zstd artifact so everyone's on the same page.
-    
-    No windows support (sorry)
 
     Args:
-        rtcx: Repository context.
+        ctx: Repository context.
     """
-    os_name = rctx.os.name.lower()
-    if os_name == OSX_OS_NAME:
-        url = "https://github.com/indygreg/python-build-standalone/releases/download/20210228/cpython-3.8.8-x86_64-apple-darwin-pgo+lto-20210228T1503.tar.zst"
-        integrity_shasum = "4c859311dfd677e4a67a2c590ff39040e76b97b8be43ef236e3c924bff4c67d2"
-
-    elif os_name == LINUX_OS_NAME:
-        url = "https://github.com/indygreg/python-build-standalone/releases/download/20210228/cpython-3.8.8-x86_64-unknown-linux-gnu-pgo+lto-20210228T1503.tar.zst"
-        integrity_shasum = "74c9067b363758e501434a02af87047de46085148e673547214526da6e2b2155"
-
-    else:
-        fail("OS '{}' is not supported.".format(os_name))
-
-    rctx.report_progress("downloading python...")
-    rctx.download(
-        url = [url],
-        sha256 = integrity_shasum,
-        output = "python.tar.zst",
+    ctx.report_progress("downloading python")
+    ctx.download_and_extract(
+        url = ctx.attr.urls,
+        sha256 = ctx.attr.sha256,
+        stripPrefix = "python",
     )
     
-    # Running "zstd -d python.tar.zst" to unpack the archive.
-    zstd_bin_path = rctx.path(rctx.attr._zstd_bin)
-    rctx.report_progress("decompressing python... ")
-    res = rctx.execute([
-        zstd_bin_path,
-        "-d",
-        "python.tar.zst",
-    ])
+    ctx.report_progress("generating build file") 
+    os_constraint = ""
+    arch_constraint = ""
 
-    if res.return_code:
-        fail("Error decompressing with zstd: " + res.stdout + res.stderr)
+    if ctx.attr.os == "darwin":
+        os_constraint = "@platforms//os:osx"
+
+    elif ctx.attr.os == "linux":
+        os_constraint = "@platforms//os:linux"
+
+    elif ctx.attr.os == "windows":
+        os_constraint = "@platforms//os:windows"
+
+    else:
+        fail("{} not supported".format(ctx.attr.os))
+
+    if ctx.attr.arch == "x86_64":
+        arch_constraint = "@platforms//cpu:x86_64"
+
+    else:
+        fail("{} not supported".format(ctx.attr.arch))
+
+    constraints = [os_constraint, arch_constraint]
     
-    # Now we can extract it normally.
-    rctx.extract(archive = "python.tar")
-    rctx.delete("python.tar")
-    rctx.delete("python.tar.zst")
-    
-    # Our Python distribution generates a PYTHON.json file that contains useful fun facts about our build.
-    # We can use this to extract the path to our python executable.
-    python_build_data = json.decode(rctx.read("python/PYTHON.json"))
+    # So Starlark doesn't throw an indentation error when this gets injected.
+    constraints_str = ",\n        ".join(['"%s"' % c for c in constraints])
 
-    # Generate build targets for Python. This gets dropped in the WORKSPACE level BUILD.bazel for our new repo.
-    BUILD_FILE_CONTENT = """
-filegroup(
-    name = "files",
-    srcs = glob(["install/**"], exclude = ["**/* *"]),
-    visibility = ["//visibility:public"],
-)
+    substitutions = {
+        "{constraints}": constraints_str,
+        "{interpreter_path}": ctx.attr._interpreter_path,
+    }
 
-filegroup(
-    name = "interpreter",
-    srcs = ["python/{interpreter_path}"],
-    visibility = ["//visibility:public"],
-)
-
-sh_binary(
-    name = "python_bin",
-    srcs = ["python/{interpreter_path}"],
-    visibility = ["//visibility:public"],
-)
-""".format(interpreter_path = python_build_data["python_exe"])
-
-    rctx.file("BUILD.bazel", BUILD_FILE_CONTENT)
+    ctx.template(
+        "BUILD.bazel",
+        ctx.attr._build_tpl,
+        substitutions = substitutions,
+    )
 
     return None
 
-py_build_hermetic_interpreter = repository_rule(
-    implementation = _py_build_hermetic_interpreter,
+py_download = repository_rule(
+    implementation = _py_download,
     attrs = {
-        "_zstd_bin": attr.label(
-            default = "@com_github_facebook_zstd//:zstd",
-            doc = "Label type denoting an executable file target to a pre-built zstd binary.",
+        "urls": attr.string_list(
+            mandatory = True,
+            doc = "String list of mirror URLs where the Python distribution can be downloaded.",
         ),
+        "sha256": attr.string(
+            mandatory = True,
+            doc = "Expected SHA-256 sum of the archive.",
+        ),
+        "os": attr.string(
+            mandatory = True,
+            values = ["darwin", "linux", "windows"],
+            doc = "Host operating system.",
+        ),
+        "arch": attr.string(
+            mandatory = True,
+            values = ["x86_64"],
+            doc = "Host architecture.",
+        ),
+        "_interpreter_path": attr.string(
+            default = "bin/python3",
+            doc = "Path you'd expect the python interpreter binary to live.",
+        ),
+        "_build_tpl": attr.label(
+            default = "@rules_py_simple//internal:BUILD.dist.bazel.tpl",
+            doc = "Label denoting the BUILD file template that get's installed in the repo.",
+        )
     },
 )

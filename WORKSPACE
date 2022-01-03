@@ -2,38 +2,26 @@ workspace(
     name = "rules_py_simple",
 )
 
-load("@rules_py_simple//internal:python_interpreter.bzl", "py_build_hermetic_interpreter")
+load("@rules_py_simple//internal:python_interpreter.bzl", "py_download")
 
-py_build_hermetic_interpreter(
-    name = "python_interpreter",
+py_download(
+    name = "py_darwin_x86_64",
+    arch = "x86_64",
+    os = "darwin",
+    sha256 = "fc0d184feb6db61f410871d0660d2d560e0397c36d08b086dfe115264d1963f4",
+    urls = ["https://github.com/indygreg/python-build-standalone/releases/download/20211017/cpython-3.10.0-x86_64-apple-darwin-install_only-20211017T1616.tar.gz"],
 )
 
-register_toolchains("@rules_py_simple//:py_toolchain")
-
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-# Fun http_archive hack to register zstd as a Bazel repo (so build targets can depend on it).
-http_archive(
-    name = "com_github_facebook_zstd",
-    urls = [
-        "https://github.com/facebook/zstd/releases/download/v1.5.1/zstd-1.5.1.tar.gz"
-    ],
-    sha256 = "e28b2f2ed5710ea0d3a1ecac3f6a947a016b972b9dd30242369010e5f53d7002",
-    # Hoist everything up one level.
-    strip_prefix = "zstd-1.5.1",
-    patch_cmds = [
-        # Build zstd.
-        "make",
-    ],
-    # zstd is the name of binary produced from running "make"
-    # therefore we export it so the pre-compiled binary can be depended on as a Label.
-    build_file_content = """
-exports_files(["zstd"])
-
-filegroup(
-    name = "files",
-    srcs = glob(["**"]),
-    visibility = ["//visibility:public"],
+py_download(
+    name = "py_linux_x86_64",
+    arch = "x86_64",
+    os = "linux",
+    sha256 = "eada875c9b39cc4bf4a055dd8f5188e99c0c90dd5deb05b6c213f49482fe20a6",
+    urls = ["https://github.com/indygreg/python-build-standalone/releases/download/20211017/cpython-3.10.0-x86_64-unknown-linux-gnu-install_only-20211017T1616.tar.gz"],
 )
-""",
+
+register_toolchains(
+    "@py_darwin_x86_64//:toolchain",
+    "@py_linux_x86_64//:toolchain",
 )
+
