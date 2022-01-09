@@ -1,14 +1,18 @@
 """Repository rules for rules_py_simple"""
 
+_OS_MAP = {
+        "darwin": "@platforms//os:osx",
+        "linux": "@platforms//os:linux",
+        "windows": "@platforms//os:windows",
+}
+
+_ARCH_MAP = {
+        "x86_64": "@platforms//cpu:x86_64",
+}
+
 def _py_download(ctx):
     """
     Downloads and builds a Python distribution.
-
-    The Python distribution we've selected ships as a .zst, so we need zstandard to decompress the archive.
-    This is annoying because ctx.download_and_extract() doesn't natively support zstd.
-    We need to download the Python archive and manually decompress it using a prebuilt zstd binary.
-
-    Although we could rely on the system installation of zstd (whatever the command "which zstd" points to), doing so is undesireable as it introduces flakiness in our build and adds an unnecessary dependency on the host.
 
     Args:
         ctx: Repository context.
@@ -21,32 +25,15 @@ def _py_download(ctx):
     )
     
     ctx.report_progress("generating build file") 
-    os_constraint = ""
-    arch_constraint = ""
-
-    if ctx.attr.os == "darwin":
-        os_constraint = "@platforms//os:osx"
-
-    elif ctx.attr.os == "linux":
-        os_constraint = "@platforms//os:linux"
-
-    elif ctx.attr.os == "windows":
-        os_constraint = "@platforms//os:windows"
-
-    else:
-        fail("{} not supported".format(ctx.attr.os))
-
-    if ctx.attr.arch == "x86_64":
-        arch_constraint = "@platforms//cpu:x86_64"
-
-    else:
-        fail("{} not supported".format(ctx.attr.arch))
+    os_constraint = _OS_MAP[ctx.attr.os]
+    arch_constraint = _ARCH_MAP[ctx.attr.arch]
 
     constraints = [os_constraint, arch_constraint]
     
     # So Starlark doesn't throw an indentation error when this gets injected.
     constraints_str = ",\n        ".join(['"%s"' % c for c in constraints])
 
+    # Inject our string substitutions into the BUILD file template, and drop said BUILD file in the WORKSPACE root of the repository.
     substitutions = {
         "{constraints}": constraints_str,
         "{interpreter_path}": ctx.attr._interpreter_path,
