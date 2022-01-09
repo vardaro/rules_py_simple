@@ -1,4 +1,0 @@
-toolchain_type(
-    name = "python_toolchain_type",
-    visibility = ["//visibility:public"],
-)
