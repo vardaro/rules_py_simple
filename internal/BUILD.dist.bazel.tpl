@@ -1,3 +1,5 @@
+load("@bazel_tools//tools/python:toolchain.bzl", "py_runtime_pair")
+
 filegroup(
     name = "files",
     srcs = glob(["install/**"], exclude = ["**/* *"]),
@@ -18,6 +20,12 @@ py_runtime(
     visibility = ["//visibility:public"],
 )
 
+py_runtime_pair(
+    name = "py_runtime_pair",
+    py2_runtime = None,
+    py3_runtime = ":py_runtime",
+)
+
 toolchain(
     name = "toolchain",
     exec_compatible_with = [
@@ -26,6 +34,6 @@ toolchain(
     target_compatible_with = [
 	{constraints},
     ],
-    toolchain = ":py_runtime",
-    toolchain_type = "@rules_py_simple//:python_toolchain_type",
+    toolchain = ":py_runtime_pair",
+    toolchain_type = "@bazel_tools//tools/python:toolchain_type",
 )
