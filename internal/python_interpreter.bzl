@@ -1,5 +1,15 @@
 """Repository rules for rules_py_simple"""
 
+_OS_MAP = {
+        "darwin": "@platforms//os:osx",
+        "linux": "@platforms//os:linux",
+        "windows": "@platforms//os:windows",
+}
+
+_ARCH_MAP = {
+        "x86_64": "@platforms//cpu:x86_64",
+}
+
 def _py_download(ctx):
     """
     Downloads and builds a Python distribution.
@@ -21,26 +31,8 @@ def _py_download(ctx):
     )
     
     ctx.report_progress("generating build file") 
-    os_constraint = ""
-    arch_constraint = ""
-
-    if ctx.attr.os == "darwin":
-        os_constraint = "@platforms//os:osx"
-
-    elif ctx.attr.os == "linux":
-        os_constraint = "@platforms//os:linux"
-
-    elif ctx.attr.os == "windows":
-        os_constraint = "@platforms//os:windows"
-
-    else:
-        fail("{} not supported".format(ctx.attr.os))
-
-    if ctx.attr.arch == "x86_64":
-        arch_constraint = "@platforms//cpu:x86_64"
-
-    else:
-        fail("{} not supported".format(ctx.attr.arch))
+    os_constraint = _OS_MAP[ctx.attr.os]
+    arch_constraint = _ARCH_MAP[ctx.attr.arch]
 
     constraints = [os_constraint, arch_constraint]
     
