@@ -14,12 +14,6 @@ def _py_download(ctx):
     """
     Downloads and builds a Python distribution.
 
-    The Python distribution we've selected ships as a .zst, so we need zstandard to decompress the archive.
-    This is annoying because ctx.download_and_extract() doesn't natively support zstd.
-    We need to download the Python archive and manually decompress it using a prebuilt zstd binary.
-
-    Although we could rely on the system installation of zstd (whatever the command "which zstd" points to), doing so is undesireable as it introduces flakiness in our build and adds an unnecessary dependency on the host.
-
     Args:
         ctx: Repository context.
     """
@@ -39,6 +33,7 @@ def _py_download(ctx):
     # So Starlark doesn't throw an indentation error when this gets injected.
     constraints_str = ",\n        ".join(['"%s"' % c for c in constraints])
 
+    # Inject our string substitutions into the BUILD file template, and drop said BUILD file in the WORKSPACE root of the repository.
     substitutions = {
         "{constraints}": constraints_str,
         "{interpreter_path}": ctx.attr._interpreter_path,
