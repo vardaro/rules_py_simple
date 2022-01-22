@@ -1,0 +1,7 @@
+load("@rules_py_simple//internal:defs.bzl", "py_binary")
+
+py_binary(
+    name = "binary_no_deps",
+    srcs = ["binary_no_deps.py"],
+    visibility = ["//visibility:public"],
+)
