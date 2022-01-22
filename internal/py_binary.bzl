@@ -22,6 +22,8 @@ def _py_binary_impl(ctx):
     # Query the Python runtime
     py_toolchain = ctx.toolchains["@bazel_tools//tools/python:toolchain_type"]
 
+    print(py_toolchain.py3_runtime.interpreter.path)
+
     runfiles = []
     runfiles.extend(ctx.files._bash_runfile_helper)
 
@@ -30,7 +32,7 @@ def _py_binary_impl(ctx):
             executable = executable,
             runfiles = ctx.runfiles(
                     transitive_files = depset(runfiles),
-                    files = ctx.files.srcs,  
+                    files = ctx.files.srcs + [py_toolchain.py3_runtime.interpreter],  
                     collect_data = True,
             ),
         ),
@@ -64,5 +66,8 @@ py_binary = rule(
 
     # All toolchains of this alias propagate to this rule.
     # This is how Bazel knows to include our hermetic runtime in the analysis context.
-    toolchains = ["@bazel_tools//tools/python:toolchain_type"],
+    toolchains = [
+        "@bazel_tools//tools/python:toolchain_type",
+        "@bazel_tools//tools/sh:toolchain_type",
+    ],
 )
