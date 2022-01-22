@@ -9,4 +9,4 @@ source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/
   { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
 # --- end runfiles.bash initialization v2 ---
 
-"$(rlocation rules_py_simple/test/binary_no_deps/binary_no_deps.py)"
+cat "$(rlocation rules_py_simple/test/binary_no_deps/binary_no_deps.py)"

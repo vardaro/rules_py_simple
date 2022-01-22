@@ -11,7 +11,7 @@ def _py_binary_impl(ctx):
     Returns:
         DefaultInfo provider containing the executable and corresponding runfiles.
     """
-    executable = ctx.label.name
+    executable = ctx.actions.declare_file(ctx.label.name)
     ctx.actions.expand_template(
         template = ctx.file._bash_runtime_launcher_template,
         output = executable,
@@ -21,14 +21,18 @@ def _py_binary_impl(ctx):
 
     # Query the Python runtime
     py_toolchain = ctx.toolchains["@bazel_tools//tools/python:toolchain_type"]
-    print(py_toolchain.py3_runtime.interpreter.path)
-    print(py_toolchain.py3_runtime.interpreter.short_path)
-    print(py_toolchain.py3_runtime.interpreter.root.path)
+
+    runfiles = []
+    runfiles.extend(ctx.files._bash_runfile_helper)
+
     return [
         DefaultInfo(
-            files = depset([executable]),
-            runfiles = ctx.runfiles(collect_data = True),
             executable = executable,
+            runfiles = ctx.runfiles(
+                    transitive_files = depset(runfiles),
+                    files = ctx.files.srcs,  
+                    collect_data = True,
+            ),
         ),
     ]
 
@@ -52,10 +56,11 @@ py_binary = rule(
         "_bash_runtime_launcher_template": attr.label(
             default = Label("@rules_py_simple//internal:launcher.bash.tpl"),
             allow_single_file = True,
-        )
+        ),
     },
     doc = "Builds an executable program from Python source code",
     executable = True,
+    
 
     # All toolchains of this alias propagate to this rule.
     # This is how Bazel knows to include our hermetic runtime in the analysis context.
