@@ -51,6 +51,7 @@ py_binary = rule(
         ),
         "_bash_runtime_launcher_template": attr.label(
             default = Label("@rules_py_simple//internal:launcher.bash.tpl"),
+            allow_single_file = True,
         )
     },
     doc = "Builds an executable program from Python source code",
