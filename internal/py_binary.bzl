@@ -16,7 +16,9 @@ def _py_binary_impl(ctx):
 
     # Query the Python runtime
     py_toolchain = ctx.toolchains["@bazel_tools//tools/python:toolchain_type"]
-
+    print(py_toolchain.py3_runtime.interpreter.path)
+    print(py_toolchain.py3_runtime.interpreter.short_path)
+    print(py_toolchain.py3_runtime.interpreter.root.path)
     return [
         DefaultInfo(
             files = depset([executable]),
