@@ -1,0 +1,4 @@
+exports_files([
+    "BUILD.dist.bazel.tpl",
+    "launcher.bash.tpl",
+])

@@ -11,8 +11,13 @@ def _py_binary_impl(ctx):
     Returns:
         DefaultInfo provider containing the executable and corresponding runfiles.
     """
-    executable = ctx.actions.declare_file(ctx.label.name)
-    ctx.actions.write(executable, "Hello", is_executable = True)
+    executable = ctx.label.name
+    ctx.actions.expand_template(
+        template = ctx.file._bash_runtime_launcher_template,
+        output = executable,
+        substitutions = {},
+        is_executable = True,
+    )
 
     # Query the Python runtime
     py_toolchain = ctx.toolchains["@bazel_tools//tools/python:toolchain_type"]
@@ -41,6 +46,12 @@ py_binary = rule(
             allow_files = True,
             doc = "Data files available to this binary at runtime.",
         ),
+        "_bash_runfile_helper": attr.label(
+            default = Label("@bazel_tools//tools/bash/runfiles"),
+        ),
+        "_bash_runtime_launcher_template": attr.label(
+            default = Label("@rules_py_simple//internal:launcher.bash.tpl"),
+        )
     },
     doc = "Builds an executable program from Python source code",
     executable = True,
