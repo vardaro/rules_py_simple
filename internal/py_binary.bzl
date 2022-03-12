@@ -1,6 +1,9 @@
 def _py_binary_impl(ctx):
     """
-    py_binary
+    py_binary implementation
+    
+    Produces a bash script for launching a Python binary using the toolchain
+    registered in "@bazel_tools//tools/python:toolchain_type".
 
     Args:
         ctx: Analysis context
