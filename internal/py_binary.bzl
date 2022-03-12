@@ -59,6 +59,7 @@ py_binary = rule(
         ),
         "main": attr.label(
             allow_single_file = True,
+            mandatory = True,
             doc = "Label denoting the entrypoint of the binary",
         ),
         "_bash_runner_tpl": attr.label(

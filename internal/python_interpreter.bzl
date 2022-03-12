@@ -1,14 +1,14 @@
 """Repository rules for rules_py_simple"""
 
 _OS_MAP = {
-        "darwin": "@platforms//os:osx",
-        "linux": "@platforms//os:linux",
-        "windows": "@platforms//os:windows",
+    "darwin": "@platforms//os:osx",
+    "linux": "@platforms//os:linux",
+    "windows": "@platforms//os:windows",
 }
 
 _ARCH_MAP = {
-        "x86_64": "@platforms//cpu:x86_64",
-        "arm64": "@platforms//cpu:arm64",
+    "x86_64": "@platforms//cpu:x86_64",
+    "arm64": "@platforms//cpu:arm64",
 }
 
 def _py_download(ctx):
@@ -24,13 +24,13 @@ def _py_download(ctx):
         sha256 = ctx.attr.sha256,
         stripPrefix = "python",
     )
-    
-    ctx.report_progress("generating build file") 
+
+    ctx.report_progress("generating build file")
     os_constraint = _OS_MAP[ctx.attr.os]
     arch_constraint = _ARCH_MAP[ctx.attr.arch]
 
     constraints = [os_constraint, arch_constraint]
-    
+
     # So Starlark doesn't throw an indentation error when this gets injected.
     constraints_str = ",\n        ".join(['"%s"' % c for c in constraints])
 
@@ -76,6 +76,6 @@ py_download = repository_rule(
         "_build_tpl": attr.label(
             default = "@rules_py_simple//internal:BUILD.dist.bazel.tpl",
             doc = "Label denoting the BUILD file template that get's installed in the repo.",
-        )
+        ),
     },
 )

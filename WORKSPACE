@@ -33,4 +33,3 @@ register_toolchains(
     "@py_linux_x86_64//:toolchain",
     "@py_darwin_arm64//:toolchain",
 )
-
