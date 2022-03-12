@@ -1,0 +1,11 @@
+load("@rules_py_simple//:defs.bzl", "py_binary")
+
+py_binary(
+    name = "many_src_files_test",
+    srcs = [
+        "bar.py",
+        "foo.py",
+    ],
+    main = ":many_src_files_test.py",
+    visibility = ["//visibility:public"],
+)

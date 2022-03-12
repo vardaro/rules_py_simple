@@ -1,0 +1,10 @@
+load("@rules_py_simple//:defs.bzl", "py_binary")
+
+py_binary(
+    name = "transitive_target",
+    main = ":transitive_target.py",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@rules_py_simple//tests/py_binary/transitive_target/my_lib",
+    ],
+)

@@ -1,0 +1,10 @@
+# Just using the native py_library for this test here:
+py_library(
+    name = "my_lib",
+    srcs = [
+        "__init__.py",
+        "bar.py",
+        "foo.py",
+    ],
+    visibility = ["//visibility:public"],
+)
