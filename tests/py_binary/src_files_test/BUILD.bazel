@@ -1,0 +1,7 @@
+load("@rules_py_simple//:defs.bzl", "py_binary")
+
+py_binary(
+	name = "src_files_test",
+	srcs = ["src_files_test.py"],
+	visibility = ["//visibility:public"],
+)
