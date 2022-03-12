@@ -7,18 +7,29 @@ def _py_binary_impl(ctx):
     """
     executable = ctx.actions.declare_file(ctx.label.name)
     interpreter = ctx.toolchains["@bazel_tools//tools/python:toolchain_type"].py3_runtime.interpreter
-    runfiles = [
-        executable,
-        interpreter,
-    ]
-    runfiles.extend(ctx.attr.deps)
-    runfiles.extend(ctx.attr.data)
-    print(ctx.toolchains["@bazel_tools//tools/python:toolchain_type"].py3_runtime.interpreter.path)
-    print(ctx.toolchains["@bazel_tools//tools/python:toolchain_type"].py3_runtime.interpreter.short_path)
-    
+
+    dep_targets = ctx.attr.deps + ctx.attr.data + ctx.attr.srcs
+    dep_files = [ctx.file.main, executable, interpreter, ctx.file._bash_runfile_helper]
+
+    # Append the output of this rule, the toolchain, and direct
+    # dependencies of this target to the accumulating runfile tree
+    runfiles = ctx.runfiles(files = dep_files)
+    runfiles = runfiles.merge_all([
+        target[DefaultInfo].default_runfiles
+        for target in dep_targets
+    ])
+
+    # Chop off the "../" bit from the short_path of the toolchain
+    # so "rlocation" can parse the path to the python3 executable properly
+    interpreter_path = interpreter.short_path.replace("../", "")
+    py_binary_entry = "{workspace_name}/{entrypoint_path}".format(
+        workspace_name = ctx.workspace_name,
+        entrypoint_path = ctx.file.main.short_path,
+    )
+
     substitutions = {
-        "{interpreter_path}": interpreter.short_path,
-        "{py_binary_entry}": "{name}.py".format(name = ctx.attr.name),
+        "{interpreter_path}": interpreter_path,
+        "{py_binary_entry}": py_binary_entry,
     }
 
     ctx.actions.expand_template(
@@ -29,10 +40,7 @@ def _py_binary_impl(ctx):
 
     return [DefaultInfo(
         executable = executable,
-        runfiles = ctx.runfiles(
-            files = [executable, interpreter],
-            transitive_files = depset(runfiles),
-        ),
+        runfiles = runfiles,
     )]
 
 py_binary = rule(
@@ -49,9 +57,18 @@ py_binary = rule(
             allow_files = True,
             doc = "Data files available to binary at runtime",
         ),
+        "main": attr.label(
+            allow_single_file = True,
+            doc = "Label denoting the entrypoint of the binary",
+        ),
         "_bash_runner_tpl": attr.label(
             default = "@rules_py_simple//internal:py_binary_runner.bash.tpl",
             doc = "Label denoting the bash runner template to use for the binary",
+            allow_single_file = True,
+        ),
+        "_bash_runfile_helper": attr.label(
+            default = "@bazel_tools//tools/bash/runfiles",
+            doc = "Label pointing to bash runfile helper",
             allow_single_file = True,
         ),
     },
