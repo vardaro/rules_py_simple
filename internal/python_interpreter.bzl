@@ -8,6 +8,7 @@ _OS_MAP = {
 
 _ARCH_MAP = {
         "x86_64": "@platforms//cpu:x86_64",
+        "arm64": "@platforms//cpu:arm",
 }
 
 def _py_download(ctx):
@@ -65,7 +66,7 @@ py_download = repository_rule(
         ),
         "arch": attr.string(
             mandatory = True,
-            values = ["x86_64"],
+            values = ["x86_64", "arm64"],
             doc = "Host architecture.",
         ),
         "_interpreter_path": attr.string(

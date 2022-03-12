@@ -5,13 +5,21 @@ def _py_binary_impl(ctx):
     Args:
         ctx: Analysis context
     """
-    script = ctx.actions.declare_file(ctx.label.name)
-    runfiles = [script]
-    
+    executable = ctx.actions.declare_file(ctx.label.name)
+    runfiles = [executable]
+    interpreter = ctx.toolchains["@bazel_tools//tools/python:toolchain_type"].py3_runtime.interpreter
+    print(interpreter.path)
+
+    ctx.actions.expand_template(
+        template = ctx.file._bash_runner_tpl,
+        output = executable,
+        substitutions = {},
+    )
+
     return [DefaultInfo(
-        executable = script,
+        executable = executable,
         runfiles = ctx.runfiles(
-            files = [script, interpreter],
+            files = [executable, interpreter],
             transitive_files = depset(runfiles),
         ),
     )]
@@ -31,8 +39,8 @@ py_binary = rule(
             doc = "Data files available to binary at runtime",
         ),
         "_bash_runner_tpl": attr.label(
-            default = "@dd_source//rules/python/py_binary:py_binary_runner.bash.tpl",
-            doc = "Label denoting the bash runner template to use for the binary.",
+            default = "@rules_py_simple//internal:py_binary_runner.bash.tpl",
+            doc = "Label denoting the bash runner template to use for the binary",
             allow_single_file = True,
         ),
     },
