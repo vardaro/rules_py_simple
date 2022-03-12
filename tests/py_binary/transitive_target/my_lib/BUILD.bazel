@@ -3,8 +3,8 @@ py_library(
     name = "my_lib",
     srcs = [
         "__init__.py",
-        "foo.py",
         "bar.py",
+        "foo.py",
     ],
     visibility = ["//visibility:public"],
 )

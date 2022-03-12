@@ -1,0 +1,16 @@
+load("@rules_py_simple//:defs.bzl", "py_binary")
+
+exports_files(["data.txt"])
+
+py_library(
+    name = "py_library",
+    data = ["data.txt"],
+    visibility = ["//visibility:private"],
+)
+
+py_binary(
+    name = "data_dependency",
+    main = "data_dependency.py",
+    visibility = ["//visibility:public"],
+    deps = [":py_library"],
+)
