@@ -2,3 +2,10 @@ bazel-bin
 bazel-out
 bazel-rules_py_simple
 bazel-testlogs
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# C extensions
+*.so
