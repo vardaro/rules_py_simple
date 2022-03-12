@@ -8,7 +8,7 @@ _OS_MAP = {
 
 _ARCH_MAP = {
         "x86_64": "@platforms//cpu:x86_64",
-        "arm64": "@platforms//cpu:arm",
+        "arm64": "@platforms//cpu:arm64",
 }
 
 def _py_download(ctx):

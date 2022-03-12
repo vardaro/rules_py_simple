@@ -6,14 +6,25 @@ def _py_binary_impl(ctx):
         ctx: Analysis context
     """
     executable = ctx.actions.declare_file(ctx.label.name)
-    runfiles = [executable]
     interpreter = ctx.toolchains["@bazel_tools//tools/python:toolchain_type"].py3_runtime.interpreter
-    print(interpreter.path)
+    runfiles = [
+        executable,
+        interpreter,
+    ]
+    runfiles.extend(ctx.attr.deps)
+    runfiles.extend(ctx.attr.data)
+    print(ctx.toolchains["@bazel_tools//tools/python:toolchain_type"].py3_runtime.interpreter.path)
+    print(ctx.toolchains["@bazel_tools//tools/python:toolchain_type"].py3_runtime.interpreter.short_path)
+    
+    substitutions = {
+        "{interpreter_path}": interpreter.short_path,
+        "{py_binary_entry}": "{name}.py".format(name = ctx.attr.name),
+    }
 
     ctx.actions.expand_template(
         template = ctx.file._bash_runner_tpl,
         output = executable,
-        substitutions = {},
+        substitutions = substitutions,
     )
 
     return [DefaultInfo(
