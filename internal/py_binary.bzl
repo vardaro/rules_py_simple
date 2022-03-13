@@ -23,7 +23,8 @@ def _py_binary_impl(ctx):
     files.extend(ctx.files.data)
 
     # Merge the current runfiles objects with all of the
-    # transitive runfile trees
+    # transitive runfile trees (all of which would return the
+    # requested DefaultInfo provider)
     runfiles = ctx.runfiles(files = files)
     runfiles = runfiles.merge_all([
         dep[DefaultInfo].default_runfiles

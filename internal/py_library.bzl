@@ -7,11 +7,12 @@ def _py_library_impl(ctx):
     Args:
         ctx: Analysis context
     """
-    runfiles = ctx.runfiles(files = ctx.files.data)
-    all_targets = ctx.attr.srcs + ctx.attr.hdrs + ctx.attr.deps + ctx.attr.data
+    files = ctx.files.srcs + ctx.files.data
+
+    runfiles = ctx.runfiles(files = files)
     runfiles = runfiles.merge_all([
-        target[DefaultInfo].default_runfiles
-        for target in all_targets
+        dep[DefaultInfo].default_runfiles
+        for dep in ctx.attr.deps,
     ])
 
     return [
