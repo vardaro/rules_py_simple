@@ -1,7 +1,7 @@
 def _py_binary_impl(ctx):
     """
     py_binary implementation
-    
+
     Produces a bash script for launching a Python binary using the toolchain
     registered in "@bazel_tools//tools/python:toolchain_type".
 
@@ -11,15 +11,23 @@ def _py_binary_impl(ctx):
     executable = ctx.actions.declare_file(ctx.label.name)
     interpreter = ctx.toolchains["@bazel_tools//tools/python:toolchain_type"].py3_runtime.interpreter
 
-    dep_targets = ctx.attr.deps + ctx.attr.data + ctx.attr.srcs
-    dep_files = [ctx.file.main, executable, interpreter, ctx.file._bash_runfile_helper]
+    # File targets to be included in runfile object (i.e. the default ouputs)
+    files = [
+        ctx.file.main,
+        executable,
+        interpreter,
+        ctx.file._bash_runfile_helper,
+    ]
 
-    # Append the output of this rule, the toolchain, and direct
-    # dependencies of this target to the accumulating runfile tree
-    runfiles = ctx.runfiles(files = dep_files)
+    files.extend(ctx.files.srcs)
+    files.extend(ctx.files.data)
+
+    # Merge the current runfiles objects with all of the
+    # transitive runfile trees
+    runfiles = ctx.runfiles(files = files)
     runfiles = runfiles.merge_all([
-        target[DefaultInfo].default_runfiles
-        for target in dep_targets
+        dep[DefaultInfo].default_runfiles
+        for dep in ctx.attr.deps
     ])
 
     # Chop off the "../" bit from the short_path of the toolchain
@@ -41,10 +49,12 @@ def _py_binary_impl(ctx):
         substitutions = substitutions,
     )
 
-    return [DefaultInfo(
-        executable = executable,
-        runfiles = runfiles,
-    )]
+    return [
+        DefaultInfo(
+            executable = executable,
+            runfiles = runfiles,
+        ),
+    ]
 
 py_binary = rule(
     implementation = _py_binary_impl,
