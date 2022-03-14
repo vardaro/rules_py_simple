@@ -31,17 +31,16 @@ def _py_binary_impl(ctx):
         for dep in ctx.attr.deps
     ])
 
-    # Chop off the "../" bit from the short_path of the toolchain
-    # so "rlocation" can parse the path to the python3 executable properly
-    interpreter_path = interpreter.short_path.replace("../", "")
     py_binary_entry = "{workspace_name}/{entrypoint_path}".format(
         workspace_name = ctx.workspace_name,
         entrypoint_path = ctx.file.main.short_path,
     )
+    
+    interpreter_path = interpreter.short_path.replace("../", "")
 
     substitutions = {
-        "{interpreter_path}": interpreter_path,
         "{py_binary_entry}": py_binary_entry,
+        "{interpreter_path}": interpreter_path,
     }
 
     ctx.actions.expand_template(

@@ -12,7 +12,7 @@ def _py_library_impl(ctx):
     runfiles = ctx.runfiles(files = files)
     runfiles = runfiles.merge_all([
         dep[DefaultInfo].default_runfiles
-        for dep in ctx.attr.deps,
+        for dep in ctx.attr.deps
     ])
 
     return [
