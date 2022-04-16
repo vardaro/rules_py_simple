@@ -31,7 +31,7 @@ def _py_binary_impl(ctx):
         for dep in ctx.attr.deps
     ])
 
-    py_binary_entry = "{workspace_name}/{entrypoint_path}".format(
+    entrypoint_path = "{workspace_name}/{entrypoint_path}".format(
         workspace_name = ctx.workspace_name,
         entrypoint_path = ctx.file.main.short_path,
     )
@@ -39,7 +39,7 @@ def _py_binary_impl(ctx):
     interpreter_path = interpreter.short_path.replace("../", "")
 
     substitutions = {
-        "{py_binary_entry}": py_binary_entry,
+        "{entrypoint_path}": entrypoint_path,
         "{interpreter_path}": interpreter_path,
     }
 
@@ -70,16 +70,22 @@ py_binary = rule(
             allow_files = True,
             doc = "Data files available to binary at runtime",
         ),
+
+        # This doesn't really need to be mandatory, I'm choosing to do so to keep the example simple.
         "main": attr.label(
             allow_single_file = True,
             mandatory = True,
             doc = "Label denoting the entrypoint of the binary",
         ),
+
+        # Our rule is going to register an action to expand whatever template this attribute points to.
         "_bash_runner_tpl": attr.label(
             default = "@rules_py_simple//internal:py_binary_runner.bash.tpl",
             doc = "Label denoting the bash runner template to use for the binary",
             allow_single_file = True,
         ),
+
+        # Bazel ships with a useful bash function for querying the absolute path to runfiles at runtime.
         "_bash_runfile_helper": attr.label(
             default = "@bazel_tools//tools/bash/runfiles",
             doc = "Label pointing to bash runfile helper",
@@ -87,6 +93,10 @@ py_binary = rule(
         ),
     },
     executable = True,
+
+    # You pass a toolchain_type target here.
+    # In this case, we use a builtin toolchain_type that was registered in a previous
+    # blog post: https://www.anthonyvardaro.com/blog/hermetic-python-toolchain-with-bazel
     toolchains = ["@bazel_tools//tools/python:toolchain_type"],
     doc = "Builds a Python executable from source files and dependencies.",
 )
