@@ -1,0 +1,10 @@
+load("@rules_py_simple//:defs.bzl", "py_binary")
+
+py_binary(
+    name = "app",
+    main = "app.py",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@rules_py_simple//tests/py_binary/app/lib",
+    ],
+)
