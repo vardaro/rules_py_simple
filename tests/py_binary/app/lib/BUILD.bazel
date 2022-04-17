@@ -1,0 +1,10 @@
+load("@rules_py_simple//:defs.bzl", "py_library")
+
+py_library(
+    name = "lib",
+    srcs = [
+        "__init__.py",
+        "lib.py",
+    ],
+    visibility = ["//visibility:public"],
+)
